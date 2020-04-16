@@ -1,5 +1,5 @@
-import React, {useState, useEffect} from "react";
-import api from './services/api';
+import React, { useState, useEffect } from "react";
+import api from './services/api'
 
 import {
   SafeAreaView,
@@ -7,91 +7,83 @@ import {
   FlatList,
   Text,
   StatusBar,
-  StyleSheet,
+  StyleSheet, 
   TouchableOpacity,
 } from "react-native";
 
-export default function App() { 
-  const [repositories, setRepositories] = useState([]);
-  const [likes, setLikes] = useState(0);
+export default function App() {
+  const [repositories, setRepositories] = useState([])
 
-  async function loadRepositories(){
-    const response = await api.get('/repositories');
+  useEffect(() => {
+    async function fetchData() {
+      const response = await api.get("/repositories");
+      setRepositories(response.data);
+    }
 
-    setRepositories(response.data);
-  }
-
-  useEffect(()=>{
-    loadRepositories();
-  },[])
-
+    fetchData();
+  }, []);
+  
   async function handleLikeRepository(id) {
-    await api.post(`/repositories/${id}/like`);
-
-    const repositorieIndex = repositories.findIndex(repo => repo.id === id);
-    let updRepos = repositories;
-
-    const upLike = updRepos[repositorieIndex].likes++;
-
-    setLikes(upLike);
+    try {
+      const { data: newRepository } = await api.post(`/repositories/${id}/like`);
+      setRepositories(
+        repositories.map((repository) =>
+          repository.id === id ? newRepository : repository
+        )
+      );
+    } catch (error) {
+      console.log(error);
+    }
   }
 
   return (
     <>
       <StatusBar barStyle="light-content" backgroundColor="#7159c1" />
       <SafeAreaView style={styles.container}>
-        <Text style={styles.likes}>{likes}</Text>
-        <FlatList
-          style={styles.repositoriesList}
-          keyExtractor={repositorie => String(repositorie.id)}
-          //showsVerticalScrollIndicator={false}
-          data={repositories}
-          renderItem={({item: repositorie}) => (
-            <View style={styles.repositoryContainer}>
-              <Text style={styles.repository}>{repositorie.title}</Text>
+      <FlatList
+        data={repositories}
+        keyExtractor={repository => repository.id}
+        renderItem={({ item: repository }) => (
+          <View style={styles.repositoryContainer}>
+          <Text style={styles.repository}>{repository.title}</Text>
 
-              <View style={styles.techsContainer}>
-                {repositorie.techs.map( tech => 
-                  <Text style={styles.tech}>
-                    {tech}
-                  </Text>
-                )}
-              </View>
+          <View style={styles.techsContainer}>
+            {repository.techs.map(tech => (
+              <Text key={tech} style={styles.tech}>
+                {tech}
+              </Text>
+            ))}
+        
+          </View>
 
-              <View style={styles.likesContainer}>
-                <Text
-                  style={styles.likeText}
-                  testID={`repository-likes-${repositorie.id}`}
-                >
-                  {repositorie.likes}
-                </Text>
-              </View>
+          <View style={styles.likesContainer}>
+            <Text
+              style={styles.likeText}
+              testID={`repository-likes-${repository.id}`}
+            >
+              {repository.likes} curtida{repository.likes > 1 ? 's' : ''}
+            </Text>
+          </View>
 
-              <TouchableOpacity
-                style={styles.button}
-                onPress={() => handleLikeRepository(repositorie.id)}
-                testID={`like-button-${repositorie.id}`}
-              >
-                <Text style={styles.buttonText}>Curtir</Text>
-              </TouchableOpacity>
-            </View>
-          )}
-        />
+          <TouchableOpacity
+            style={styles.button}
+            onPress={() => handleLikeRepository(repository.id)}
+            testID={`like-button-${repository.id}`}
+          >
+            <Text style={styles.buttonText}>Curtir</Text>
+          </TouchableOpacity>
+        </View>
+        )}
+      />  
       </SafeAreaView>
     </>
   );
 }
 
 const styles = StyleSheet.create({
-  likes:{
-    color:'#7159c1',
-  },
   container: {
     flex: 1,
     backgroundColor: "#7159c1",
-  },
-  repositoriesList:{
-    marginTop:30,
   },
   repositoryContainer: {
     marginBottom: 15,
@@ -102,6 +94,7 @@ const styles = StyleSheet.create({
   repository: {
     fontSize: 32,
     fontWeight: "bold",
+    color: "#F5F5F5",
   },
   techsContainer: {
     flexDirection: "row",
@@ -114,7 +107,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#04d361",
     paddingHorizontal: 10,
     paddingVertical: 5,
-    color: "#fff",
+    color: "#F5F5F5",
   },
   likesContainer: {
     marginTop: 15,
@@ -125,15 +118,17 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "bold",
     marginRight: 10,
+    color: "#F5F5F5",
   },
   button: {
     marginTop: 10,
   },
   buttonText: {
+    textAlign: "center",
     fontSize: 14,
     fontWeight: "bold",
     marginRight: 10,
-    color: "#fff",
+    color: "#F5F5F5",
     backgroundColor: "#7159c1",
     padding: 15,
   },
